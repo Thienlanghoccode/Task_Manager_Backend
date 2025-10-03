@@ -1,0 +1,90 @@
+server:
+  port: 8081
+  error:
+    include-stacktrace: never
+
+spring:
+  application:
+    name: task-manager
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/taskmanager
+    username: postgres
+    password: 123456
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 30000
+      max-lifetime: 1200000
+      connection-timeout: 5000
+      leak-detection-threshold: 30000
+      validation-timeout: 3000
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    generate-ddl: false
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
+  messages:
+    basename: i18n/message
+    encoding: UTF-8
+    fallback-to-system-locale: false
+  data:
+    redis:
+      port: 6379
+      host:  crucial-newt-35208.upstash.io
+      password: AYmIAAIncDE3YTA2ZTJiOWY4MTA0NjgwOTMwNzg5YzI0NTViNjZjZXAxMzUyMDg
+      ssl:
+        enabled: true
+
+logging:
+  level:
+    # Hibernate
+    org.hibernate.orm.deprecation: ERROR
+    org.hibernate.orm.connections.pooling: ERROR
+    org.hibernate.engine.transaction.jta.platform.internal.JtaPlatformInitiator: ERROR
+    org.hibernate.jpa.boot.internal: ERROR
+
+    # Spring Security
+    org.springframework.security.web.FilterChainProxy: WARN
+    org.springframework.security.authentication: WARN
+    org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer: ERROR
+
+    # Spring Web
+    org.springframework.web: WARN
+
+    # HikariCP
+    com.zaxxer.hikari: ERROR
+
+    # Event processing - enable detailed logging
+    com.vn.yenthan.shopapp_backend.event: INFO
+    org.springframework.kafka: INFO
+
+api:
+  prefix: /api/v1
+domain:
+  protocol: http://localhost:8081
+
+jwt:
+  expiration: 1800000 # 30 minutes = 1000 * 60 * 30
+  expiration-refresh-token: 1209600000 #  2 weeks = 1000 * 60 * 60 * 24 * 14
+  secretKey: SgXGUAKVe2fuwPdp2d3P4V0HEJwHNAYphDFK1ugaGmnH9ubgoASVX1AEd2hjYFcQm4j/dvvKLgi64VNOsPHdUw==
+  refreshKey: Ev/Kv5b1ndvM7ixJ/qIGCB4cnB0sKgY8ys1lIbFDteM7lfGo2x7Zwr4xNyCtbglUzKBa4jL7VbONrcfkYIDUpA==
+
+##Swagger-ui custom path
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    try-it-out-enabled: true
+    filter: true
+
+##Custom documentation Swagger-UI
+open:
+  api:
+    title: Open API For Task Manager APP
+    version: v1.0.0
+    description: Open Api Service documentation for Task Manager APP
+    serverUrl: http://localhost:8081
+    serverName: Local Environment
