@@ -9,7 +9,7 @@ spring:
 
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/todoapp
+    url: jdbc:postgresql://localhost:5432/todotest
     username: postgres
     password: 123456
     hikari:
@@ -23,7 +23,7 @@ spring:
   jpa:
     show-sql: true
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     generate-ddl: false
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     open-in-view: false
@@ -34,7 +34,7 @@ spring:
   data:
     redis:
       port: 6379
-      host:  crucial-newt-35208.upstash.io
+      host: crucial-newt-35208.upstash.io
       password: AYmIAAIncDE3YTA2ZTJiOWY4MTA0NjgwOTMwNzg5YzI0NTViNjZjZXAxMzUyMDg
       ssl:
         enabled: true

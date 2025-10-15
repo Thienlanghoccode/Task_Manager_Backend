@@ -31,4 +31,6 @@ public class ResponseUtil {
     public static <T> PageResponse<T> ok(Integer code, List<T> content, int page, int size, long total) {
         return new PageResponse<>(content, page, size, total, code);
     }
+
+
 }

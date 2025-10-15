@@ -51,13 +51,13 @@ public class GlobalExceptionHandler extends TranslateMessage {
         HttpStatus status = (ex instanceof ValidationException) ? HttpStatus.BAD_REQUEST : HttpStatus.NOT_FOUND;
         String message = ErrorCode.SYSTEM_INTERNAL_ERROR.getMessage();
         if (ex instanceof ValidationException) {
-            message = ErrorCode.SYSTEM_VALIDATION_FAILED.getMessage();
+            message = ex.getMessage();
         }
         else if (ex instanceof NoResourceFoundException) {
             message = ErrorCode.SYSTEM_NOT_FOUND.getMessage();
         }
         else if (ex instanceof NotFoundException) {
-            message = ErrorCode.SYSTEM_NOT_FOUND.getMessage();
+            message = ex.getMessage();
         }
 
         return buildResponseEntity(

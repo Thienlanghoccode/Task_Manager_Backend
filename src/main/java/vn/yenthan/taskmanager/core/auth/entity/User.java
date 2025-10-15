@@ -33,12 +33,10 @@ public class User extends EntityBase implements UserDetails {
     private String fullName;
 
     @Column(columnDefinition = "TEXT")
-    private String bio;
-
-    @Column(columnDefinition = "TEXT")
     private String profileImageUrl;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean isVerified = false;
 
     @Enumerated(EnumType.STRING)
@@ -46,6 +44,7 @@ public class User extends EntityBase implements UserDetails {
     private AccountStatus status;
 
     @Transient
+    @Builder.Default
     private Set<Role> roles = new HashSet<>();
 
     @Override
