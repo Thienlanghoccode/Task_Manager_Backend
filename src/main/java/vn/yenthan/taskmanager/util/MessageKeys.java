@@ -8,6 +8,7 @@ public final class MessageKeys {
     public static final String SYSTEM_DATABASE_ERROR = "system.database.error";
     public static final String SYSTEM_VALIDATION_FAILED = "system.validation.failed";
     public static final String SYSTEM_METHOD_NOT_ALLOWED = "system.method.not.allowed";
+    public static final String SYSTEM_NOT_FOUND = "system.not.found";
 
     // --- AUTH / SECURITY
     public static final String AUTH_UNAUTHENTICATED = "auth.unauthenticated";

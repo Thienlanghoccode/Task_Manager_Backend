@@ -9,7 +9,7 @@ spring:
 
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/taskmanager
+    url: jdbc:postgresql://localhost:5432/todoapp
     username: postgres
     password: 123456
     hikari:

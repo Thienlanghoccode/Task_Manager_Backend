@@ -23,6 +23,7 @@ public class UserDetailServiceImpl implements UserDetailService {
     @Override
     public UserDetails loadUserByUsername(String username) throws NotFoundException {
         User user = userRepository.findByUsername(username)
+                .or(() -> userRepository.findByEmail(username))
                 .orElseThrow(() -> new NotFoundException(MessageKeys.AUTH_INVALID_CREDENTIALS));
         Set<Role> roles = userRoleRepository.findRolesByUserId(user.getId());
         user.setRoles(roles);

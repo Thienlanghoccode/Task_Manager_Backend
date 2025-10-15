@@ -49,10 +49,20 @@ public class GlobalExceptionHandler extends TranslateMessage {
     @ExceptionHandler({NotFoundException.class, ValidationException.class, NoResourceFoundException.class})
     public ResponseEntity<ApiErrorResponse> handleSpecificExceptions(Exception ex, WebRequest request) {
         HttpStatus status = (ex instanceof ValidationException) ? HttpStatus.BAD_REQUEST : HttpStatus.NOT_FOUND;
-        String errorDetail = ex.getMessage();
+        String message = ErrorCode.SYSTEM_INTERNAL_ERROR.getMessage();
+        if (ex instanceof ValidationException) {
+            message = ErrorCode.SYSTEM_VALIDATION_FAILED.getMessage();
+        }
+        else if (ex instanceof NoResourceFoundException) {
+            message = ErrorCode.SYSTEM_NOT_FOUND.getMessage();
+        }
+        else if (ex instanceof NotFoundException) {
+            message = ErrorCode.SYSTEM_NOT_FOUND.getMessage();
+        }
+
         return buildResponseEntity(
                 status.value(),
-                errorDetail,
+                message,
                 status,
                 request
         );

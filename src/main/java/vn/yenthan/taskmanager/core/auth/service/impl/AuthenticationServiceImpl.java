@@ -55,7 +55,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Transactional(rollbackFor = Exception.class)
     public TokenResponse login(LogInRequest request, HttpServletRequest webRequest) {
         log.info("------------------- Authenticating ---------------------");
-        var user = userRepository.findByUsername(request.getUsername()).orElseThrow(
+        var user = userRepository.findUserByUsernameOrEmail(request.getUsername(), request.getUsername()).orElseThrow(
                 () -> new ValidationException(MessageKeys.AUTH_INVALID_CREDENTIALS)
         );
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
@@ -99,6 +99,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         User user = User.builder()
                 .username(request.getUsername())
                 .email(request.getEmail())
+                .fullName(request.getFull_name())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .isVerified(true)
                 .status(AccountStatus.ACTIVE)

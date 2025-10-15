@@ -17,6 +17,8 @@ public class RegisterRequest implements Serializable {
     @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = MessageKeys.USERNAME_PATTERN)
     private String username;
 
+    private String full_name;
+
     @Email(message = MessageKeys.EMAIL_INVALID)
     private String email;
 
