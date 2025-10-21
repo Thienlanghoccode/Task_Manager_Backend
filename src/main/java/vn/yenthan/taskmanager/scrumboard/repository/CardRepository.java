@@ -5,7 +5,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import vn.yenthan.taskmanager.scrumboard.entity.CardEntity;
-import vn.yenthan.taskmanager.scrumboard.entity.ChecklistEntity;
 
 import java.util.List;
 import java.util.Optional;
@@ -29,13 +28,9 @@ public interface CardRepository extends JpaRepository<CardEntity, Long> {
            "WHERE c.id = :id")
     Optional<CardEntity> findByIdWithComments(@Param("id") Long id);
     
-    @Query("SELECT c FROM CardEntity c LEFT JOIN FETCH c.checklists " +
+    @Query("SELECT c FROM CardEntity c LEFT JOIN FETCH c.list l LEFT JOIN FETCH l.board b " +
            "WHERE c.id = :id")
-    Optional<CardEntity> findByIdWithChecklists(@Param("id") Long id);
-    
-    @Query("SELECT ch FROM ChecklistEntity ch LEFT JOIN FETCH ch.items " +
-           "WHERE ch.card.id = :cardId")
-    List<ChecklistEntity> findChecklistsWithItemsByCardId(@Param("cardId") Long cardId);
+    Optional<CardEntity> findByIdWithListAndBoard(@Param("id") Long id);
 
     List<CardEntity> findByListIdOrderByCreatedAt(Long listId);
 

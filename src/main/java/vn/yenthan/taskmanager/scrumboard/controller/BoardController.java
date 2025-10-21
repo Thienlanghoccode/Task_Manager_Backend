@@ -18,11 +18,13 @@ import vn.yenthan.taskmanager.scrumboard.service.BoardService;
 import vn.yenthan.taskmanager.scrumboard.repository.BoardRepository;
 import vn.yenthan.taskmanager.core.component.TranslateMessage;
 import vn.yenthan.taskmanager.util.MessageKeys;
+import vn.yenthan.taskmanager.core.auth.repository.UserRepository;
 
+import java.security.Principal;
 import java.util.*;
 
 @RestController
-@RequestMapping("/api/scrumboard/board")
+@RequestMapping("${api.prefix}/scrumboard/board")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Board Controller", description = "API endpoints for board management")
@@ -31,52 +33,57 @@ public class BoardController {
     private final BoardService boardService;
     private final BoardRepository boardRepository;
     private final TranslateMessage translateMessage;
+    private final UserRepository userRepository;
 
     @GetMapping("/list")
-    @Operation(summary = "Get all boards", description = "Retrieve all boards with their lists and cards")
-    public SuccessResponse<List<BoardDto>> getAllBoards() {
-        log.info("GET /api/scrumboard/board/list - Fetching all boards");
+    @Operation(summary = "Get user's boards", description = "Retrieve all boards that the user is a member of")
+    public SuccessResponse<List<BoardDto>> getAllBoards(Principal principal) {
+        Long currentUserId = extractUserIdFromPrincipal(principal);
         return ResponseUtil.ok(HttpStatus.OK.value(),
                 translateMessage.translate(MessageKeys.BOARD_GET_SUCCESS),
-                boardService.getAllBoards());
+                boardService.getAllBoards(currentUserId));
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Get board by ID", description = "Retrieve a specific board with all details")
     public SuccessResponse<BoardDto> getBoardById(
-            @Parameter(description = "Board ID") @PathVariable Long id) {
-        log.info("GET /api/scrumboard/board/{} - Fetching board by ID", id);
+            @Parameter(description = "Board ID") @PathVariable Long id,
+            Principal principal) {
+        Long currentUserId = extractUserIdFromPrincipal(principal);
         return ResponseUtil.ok(HttpStatus.OK.value(),
                 translateMessage.translate(MessageKeys.BOARD_GET_SUCCESS),
-                boardService.getBoardById(id));
+                boardService.getBoardById(id, currentUserId));
     }
 
     @PostMapping("/add/board")
-    @Operation(summary = "Create new board", description = "Create a new board")
+    @Operation(summary = "Create new board", description = "Create a new board with auto-assigned OWNER role")
     public SuccessResponse<BoardDto> createBoard(
-            @Valid @RequestBody CreateBoardRequest request) {
-        log.info("POST /api/scrumboard/add/board - Creating new board: {}", request.getName());
+            @Valid @RequestBody CreateBoardRequest request,
+            Principal principal) {
+        Long currentUserId = extractUserIdFromPrincipal(principal);
         return ResponseUtil.ok(HttpStatus.CREATED.value(),
                 translateMessage.translate(MessageKeys.BOARD_CREATE_SUCCESS),
-                boardService.createBoard(request));
+                boardService.createBoard(request, currentUserId));
     }
 
     @PutMapping("/edit/board")
     @Operation(summary = "Update board", description = "Update an existing board")
     public SuccessResponse<BoardDto> updateBoard(
-            @Valid @RequestBody UpdateBoardRequest request) {
-        log.info("PUT /api/scrumboard/edit/board - Updating board: {}", request.getId());
+            @Valid @RequestBody UpdateBoardRequest request,
+            Principal principal) {
+        Long currentUserId = extractUserIdFromPrincipal(principal);
         return ResponseUtil.ok(HttpStatus.OK.value(),
                 translateMessage.translate(MessageKeys.BOARD_UPDATE_SUCCESS),
-                boardService.updateBoard(request));
+                boardService.updateBoard(request, currentUserId));
     }
 
     @DeleteMapping("/delete/board")
     @Operation(summary = "Delete board", description = "Delete a board by ID")
     public SuccessResponse<String> deleteBoard(
-            @Parameter(description = "Board ID") @RequestParam Long id) {
-        log.info("DELETE /api/scrumboard/delete/board - Deleting board: {}", id);
-        boardService.deleteBoard(id);
+            @Parameter(description = "Board ID") @RequestParam Long id,
+            Principal principal) {
+        Long currentUserId = extractUserIdFromPrincipal(principal);
+        boardService.deleteBoard(id, currentUserId);
         return ResponseUtil.ok(HttpStatus.OK.value(),
                 translateMessage.translate(MessageKeys.BOARD_DELETE_SUCCESS));
     }
@@ -85,11 +92,23 @@ public class BoardController {
     @Operation(summary = "Get board members", description = "Retrieve all members of a specific board")
     public SuccessResponse<List<Object>> getBoardMembers(
             @Parameter(description = "Board ID") @PathVariable Long id) {
-        log.info("GET /api/scrumboard/board/{}/members - Fetching board members", id);
         // This would need to be implemented with MemberService
         return ResponseUtil.ok(HttpStatus.OK.value(),
                 translateMessage.translate(MessageKeys.MEMBER_GET_SUCCESS),
                 List.of());
     }
 
+    private Long extractUserIdFromPrincipal(Principal principal) {
+        if (principal == null) {
+            throw new IllegalArgumentException("User not authenticated");
+        }
+        try {
+            String username = principal.getName();
+            return userRepository.findByUsername(username)
+                    .orElseThrow(() -> new IllegalArgumentException("User not found with username: " + username))
+                    .getId();
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid user authentication: " + e.getMessage());
+        }
+    }
 }

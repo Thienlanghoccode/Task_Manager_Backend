@@ -93,7 +93,12 @@ public class NotificationService {
         notification.setUser(user);
         notification.setActor(actor);
         notification.setIsRead(false);
-        notification.setMetadata(metadata);
+        // Xử lý metadata cho JSONB
+        if (metadata != null) {
+            notification.setMetadata(metadata);
+        } else {
+            notification.setMetadata("{}"); // Empty JSON object
+        }
         
         if (boardId != null) {
             BoardEntity board = boardRepository.findById(boardId)

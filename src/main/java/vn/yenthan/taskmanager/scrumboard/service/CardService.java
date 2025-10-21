@@ -36,14 +36,12 @@ public class CardService {
 
     @Transactional(readOnly = true)
     public List<CardDto> getCardsByListId(Long listId) {
-        log.info("Fetching cards for list with id: {}", listId);
         List<CardEntity> cards = cardRepository.findByListIdWithMembers(listId);
         return scrumboardMapper.toCardDtoList(cards);
     }
 
     @Transactional(readOnly = true)
     public CardDto getCardById(Long id) {
-        log.info("Fetching card with id: {}", id);
         
         // Fetch card with all related data using separate queries to avoid MultipleBagFetchException
         CardEntity card = cardRepository.findById(id)
@@ -66,24 +64,11 @@ public class CardService {
             card.setComments(c.getComments());
         });
         
-        cardRepository.findByIdWithChecklists(id).ifPresent(c -> {
-            card.setChecklists(c.getChecklists());
-        });
-        
-        // Load checklist items separately to avoid MultipleBagFetchException
-        List<ChecklistEntity> checklistsWithItems = cardRepository.findChecklistsWithItemsByCardId(id);
-        card.getChecklists().forEach(checklist -> {
-            checklistsWithItems.stream()
-                    .filter(ch -> ch.getId().equals(checklist.getId()))
-                    .findFirst()
-                    .ifPresent(ch -> checklist.setItems(ch.getItems()));
-        });
         
         return scrumboardMapper.toCardDto(card);
     }
 
     public CardDto createCard(CreateCardRequest request) {
-        log.info("Creating new card with title: {}", request.getTitle());
         
         ListEntity list = listRepository.findById(request.getLaneId())
                 .orElseThrow(() -> new NotFoundException("List not found with id: " + request.getLaneId()));
@@ -113,12 +98,10 @@ public class CardService {
             addLabelsToCard(savedCard.getId(), request.getLabelIds());
         }
         
-        log.info("Card created successfully with id: {}", savedCard.getId());
         return scrumboardMapper.toCardDto(savedCard);
     }
 
     public CardDto updateCard(UpdateCardRequest request) {
-        log.info("Updating card with id: {}", request.getId());
         
         CardEntity card = cardRepository.findById(request.getId())
                 .orElseThrow(() -> new NotFoundException("Card not found with id: " + request.getId()));
@@ -152,12 +135,10 @@ public class CardService {
             updateCardLabels(updatedCard.getId(), request.getLabelIds());
         }
         
-        log.info("Card updated successfully with id: {}", updatedCard.getId());
         return scrumboardMapper.toCardDto(updatedCard);
     }
 
     public CardDto updateCardCategory(UpdateCardCategoryRequest request) {
-        log.info("Moving card {} to list {}", request.getCardId(), request.getLaneId());
         
         CardEntity card = cardRepository.findById(request.getCardId())
                 .orElseThrow(() -> new NotFoundException("Card not found with id: " + request.getCardId()));
@@ -168,19 +149,16 @@ public class CardService {
         card.setList(newList);
         CardEntity updatedCard = cardRepository.save(card);
         
-        log.info("Card moved successfully to list {}", request.getLaneId());
         return scrumboardMapper.toCardDto(updatedCard);
     }
 
     public void deleteCard(Long id) {
-        log.info("Deleting card with id: {}", id);
         
         if (!cardRepository.existsById(id)) {
             throw new NotFoundException("Card not found with id: " + id);
         }
         
         cardRepository.deleteById(id);
-        log.info("Card deleted successfully with id: {}", id);
     }
 
     private void addMembersToCard(Long cardId, List<Long> memberIds) {

@@ -1,17 +1,30 @@
 server:
-  port: 8081
+  port: ${SERVER_PORT:8081}
   error:
     include-stacktrace: never
 
 spring:
+  config:
+    import: optional:file:.env[.properties]
   application:
-    name: task-manager
+    name: ${SPRING_APP_NAME:task-manager}
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
   datasource:
-    driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/todotest
-    username: postgres
-    password: 123456
+    driver-class-name: ${DB_DRIVER:org.postgresql.Driver}
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     hikari:
       maximum-pool-size: 10
       minimum-idle: 5
@@ -33,11 +46,11 @@ spring:
     fallback-to-system-locale: false
   data:
     redis:
-      port: 6379
-      host: crucial-newt-35208.upstash.io
-      password: AYmIAAIncDE3YTA2ZTJiOWY4MTA0NjgwOTMwNzg5YzI0NTViNjZjZXAxMzUyMDg
+      port: ${REDIS_PORT:6379}
+      host: ${REDIS_HOST}
+      password: ${REDIS_PASSWORD}
       ssl:
-        enabled: true
+        enabled: ${REDIS_SSL_ENABLED:true}
 
 logging:
   level:
@@ -63,28 +76,28 @@ logging:
     org.springframework.kafka: INFO
 
 api:
-  prefix: /api/v1
+  prefix: ${API_PREFIX:/api/v1}
 domain:
-  protocol: http://localhost:8081
+  protocol: ${DOMAIN_PROTOCOL:http://localhost:8081}
 
 jwt:
-  expiration: 1800000 # 30 minutes = 1000 * 60 * 30
-  expiration-refresh-token: 1209600000 #  2 weeks = 1000 * 60 * 60 * 24 * 14
-  secretKey: SgXGUAKVe2fuwPdp2d3P4V0HEJwHNAYphDFK1ugaGmnH9ubgoASVX1AEd2hjYFcQm4j/dvvKLgi64VNOsPHdUw==
-  refreshKey: Ev/Kv5b1ndvM7ixJ/qIGCB4cnB0sKgY8ys1lIbFDteM7lfGo2x7Zwr4xNyCtbglUzKBa4jL7VbONrcfkYIDUpA==
+  expiration: ${JWT_EXPIRATION:1800000} # 30 minutes = 1000 * 60 * 30
+  expiration-refresh-token: ${JWT_EXPIRATION_REFRESH_TOKEN:1209600000} #  2 weeks
+  secretKey: ${JWT_SECRET_KEY}
+  refreshKey: ${JWT_REFRESH_KEY}
 
 ##Swagger-ui custom path
 springdoc:
   swagger-ui:
-    path: /swagger-ui.html
-    try-it-out-enabled: true
-    filter: true
+    path: ${SWAGGER_UI_PATH:/swagger-ui.html}
+    try-it-out-enabled: ${SWAGGER_TRY_IT_OUT_ENABLED:true}
+    filter: ${SWAGGER_FILTER:true}
 
 ##Custom documentation Swagger-UI
 open:
   api:
-    title: Open API For Task Manager APP
-    version: v1.0.0
-    description: Open Api Service documentation for Task Manager APP
-    serverUrl: http://localhost:8081
-    serverName: Local Environment
+    title: ${OPEN_API_TITLE:Open API For Task Manager APP}
+    version: ${OPEN_API_VERSION:v1.0.0}
+    description: ${OPEN_API_DESCRIPTION:Open Api Service documentation for Task Manager APP}
+    serverUrl: ${OPEN_API_SERVER_URL:http://localhost:8081}
+    serverName: ${OPEN_API_SERVER_NAME:Local Environment}

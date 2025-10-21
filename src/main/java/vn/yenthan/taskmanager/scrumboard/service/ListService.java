@@ -28,21 +28,18 @@ public class ListService {
 
     @Transactional(readOnly = true)
     public List<CardListDto> getListsByBoardId(Long boardId) {
-        log.info("Fetching lists for board with id: {}", boardId);
         List<ListEntity> lists = listRepository.findByBoardIdWithCards(boardId);
         return scrumboardMapper.toCardListDtoList(lists);
     }
 
     @Transactional(readOnly = true)
     public CardListDto getListById(Long id) {
-        log.info("Fetching list with id: {}", id);
         ListEntity list = listRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new NotFoundException("List not found with id: " + id));
         return scrumboardMapper.toCardListDto(list);
     }
 
     public CardListDto createList(CreateListRequest request) {
-        log.info("Creating new list with name: {} for board: {}", request.getName(), request.getBoardId());
         
         BoardEntity board = boardRepository.findById(request.getBoardId())
                 .orElseThrow(() -> new NotFoundException("Board not found with id: " + request.getBoardId()));
@@ -56,13 +53,11 @@ public class ListService {
         list.setBoard(board);
         
         ListEntity savedList = listRepository.save(list);
-        log.info("List created successfully with id: {}", savedList.getId());
         
         return scrumboardMapper.toCardListDto(savedList);
     }
 
     public CardListDto updateList(UpdateListRequest request) {
-        log.info("Updating list with id: {}", request.getId());
         
         ListEntity list = listRepository.findById(request.getId())
                 .orElseThrow(() -> new NotFoundException("List not found with id: " + request.getId()));
@@ -74,19 +69,16 @@ public class ListService {
 
         list.setName(request.getName());
         ListEntity updatedList = listRepository.save(list);
-        log.info("List updated successfully with id: {}", updatedList.getId());
         
         return scrumboardMapper.toCardListDto(updatedList);
     }
 
     public void deleteList(Long id) {
-        log.info("Deleting list with id: {}", id);
         
         if (!listRepository.existsById(id)) {
             throw new NotFoundException("List not found with id: " + id);
         }
         
         listRepository.deleteById(id);
-        log.info("List deleted successfully with id: {}", id);
     }
 }

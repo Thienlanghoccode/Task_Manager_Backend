@@ -36,7 +36,6 @@ public interface ScrumboardMapper {
     @Mapping(target = "members", source = "members", qualifiedByName = "cardMembersToMemberDtos")
     @Mapping(target = "attachments", source = "attachments")
     @Mapping(target = "comments", source = "comments", qualifiedByName = "commentsToEmptyList")
-    @Mapping(target = "checkedList", source = "checklists", qualifiedByName = "checklistsToCheckedListDtos")
     CardDto toCardDto(CardEntity card);
 
     List<CardDto> toCardDtoList(List<CardEntity> cards);
@@ -70,10 +69,6 @@ public interface ScrumboardMapper {
 
     List<AttachmentDto> toAttachmentDtoList(List<AttachmentEntity> attachments);
 
-    // CheckedList mappings
-    CheckedListDto toCheckedListDto(ChecklistItemEntity checklistItem);
-
-    List<CheckedListDto> toCheckedListDtoList(List<ChecklistItemEntity> checklistItems);
 
     // Named methods for complex mappings
     @Named("instantToString")
@@ -111,14 +106,6 @@ public interface ScrumboardMapper {
         return List.of(); // Empty array as per requirements
     }
 
-    @Named("checklistsToCheckedListDtos")
-    default List<CheckedListDto> checklistsToCheckedListDtos(List<ChecklistEntity> checklists) {
-        if (checklists == null) return List.of();
-        return checklists.stream()
-                .flatMap(checklist -> checklist.getItems().stream())
-                .map(this::toCheckedListDto)
-                .toList();
-    }
 
     @Named("getBoardCount")
     default Integer getBoardCount(User user) {

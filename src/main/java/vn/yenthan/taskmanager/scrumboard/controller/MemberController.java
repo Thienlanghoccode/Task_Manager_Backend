@@ -18,7 +18,7 @@ import vn.yenthan.taskmanager.util.MessageKeys;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/scrumboard/member")
+@RequestMapping("${api.prefix}/scrumboard/member")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Member Controller", description = "API endpoints for member management")
@@ -31,7 +31,6 @@ public class MemberController {
     @Operation(summary = "Get board members", description = "Retrieve all members of a specific board")
     public SuccessResponse<List<MemberDto>> getBoardMembers(
             @Parameter(description = "Board ID") @PathVariable Long boardId) {
-        log.info("GET /api/scrumboard/member/{} - Fetching members for board", boardId);
         return ResponseUtil.ok(HttpStatus.OK.value(),
                 translateMessage.translate(MessageKeys.MEMBER_GET_SUCCESS),
                 memberService.getBoardMembers(boardId));
@@ -42,7 +41,6 @@ public class MemberController {
     public SuccessResponse<MemberDto> getBoardMember(
             @Parameter(description = "Board ID") @PathVariable Long boardId,
             @Parameter(description = "User ID") @PathVariable Long userId) {
-        log.info("GET /api/scrumboard/member/{}/{} - Fetching member for board", boardId, userId);
         return ResponseUtil.ok(HttpStatus.OK.value(),
                 translateMessage.translate(MessageKeys.MEMBER_GET_SUCCESS),
                 memberService.getBoardMember(boardId, userId));
@@ -53,7 +51,6 @@ public class MemberController {
     public SuccessResponse<String> addMemberToBoard(
             @Parameter(description = "Board ID") @PathVariable Long boardId,
             @Parameter(description = "User ID") @PathVariable Long userId) {
-        log.info("POST /api/scrumboard/member/{}/{} - Adding member to board", boardId, userId);
         memberService.addMemberToBoard(boardId, userId);
         return ResponseUtil.ok(HttpStatus.CREATED.value(),
                 translateMessage.translate(MessageKeys.MEMBER_ADD_SUCCESS));
@@ -64,7 +61,6 @@ public class MemberController {
     public SuccessResponse<String> removeMemberFromBoard(
             @Parameter(description = "Board ID") @PathVariable Long boardId,
             @Parameter(description = "User ID") @PathVariable Long userId) {
-        log.info("DELETE /api/scrumboard/member/{}/{} - Removing member from board", boardId, userId);
         memberService.removeMemberFromBoard(boardId, userId);
         return ResponseUtil.ok(HttpStatus.OK.value(),
                 translateMessage.translate(MessageKeys.MEMBER_REMOVE_SUCCESS));
@@ -76,7 +72,6 @@ public class MemberController {
             @Parameter(description = "Board ID") @PathVariable Long boardId,
             @Parameter(description = "User ID") @PathVariable Long userId,
             @Parameter(description = "New role") @RequestParam String role) {
-        log.info("PUT /api/scrumboard/member/{}/{}/role - Updating member role to {}", boardId, userId, role);
         memberService.updateMemberRole(boardId, userId, role);
         return ResponseUtil.ok(HttpStatus.OK.value(),
                 translateMessage.translate(MessageKeys.MEMBER_UPDATE_ROLE_SUCCESS));

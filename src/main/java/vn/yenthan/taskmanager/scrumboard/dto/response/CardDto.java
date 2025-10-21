@@ -20,6 +20,5 @@ public class CardDto {
     private List<Object> comments; // Empty array for now
     private String desc;
     private List<MemberDto> members;
-    private List<CheckedListDto> checkedList;
     private Long laneId;
 }

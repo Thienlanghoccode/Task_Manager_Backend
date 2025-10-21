@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import vn.yenthan.taskmanager.core.util.EntityBase;
 import vn.yenthan.taskmanager.core.auth.entity.User;
 import vn.yenthan.taskmanager.scrumboard.entity.BoardEntity;
@@ -46,6 +48,7 @@ public class NotificationEntity extends EntityBase {
     @Column(name = "is_read")
     private Boolean isRead;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "metadata", columnDefinition = "JSONB")
     private String metadata;
 }

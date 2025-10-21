@@ -16,7 +16,6 @@ public interface ListRepository extends JpaRepository<ListEntity, Long> {
            "LEFT JOIN FETCH c.members cm LEFT JOIN FETCH cm.user " +
            "LEFT JOIN FETCH c.labels cl LEFT JOIN FETCH cl.label " +
            "LEFT JOIN FETCH c.attachments " +
-           "LEFT JOIN FETCH c.checklists ch LEFT JOIN FETCH ch.items " +
            "WHERE l.id = :id")
     Optional<ListEntity> findByIdWithDetails(@Param("id") Long id);
 

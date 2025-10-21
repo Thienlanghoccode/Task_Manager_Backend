@@ -44,6 +44,4 @@ public class CardEntity extends EntityBase {
     @OneToMany(mappedBy = "card", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<CommentEntity> comments = new ArrayList<>();
 
-    @OneToMany(mappedBy = "card", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<ChecklistEntity> checklists = new ArrayList<>();
 }
