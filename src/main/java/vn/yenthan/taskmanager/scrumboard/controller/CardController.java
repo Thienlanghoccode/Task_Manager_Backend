@@ -23,6 +23,7 @@ import vn.yenthan.taskmanager.scrumboard.security.AuthzService;
 import vn.yenthan.taskmanager.scrumboard.service.CardService;
 import vn.yenthan.taskmanager.core.component.TranslateMessage;
 import vn.yenthan.taskmanager.util.MessageKeys;
+import vn.yenthan.taskmanager.websocket.service.WebSocketBroadcastService;
 
 import java.security.Principal;
 import java.util.List;
@@ -40,6 +41,7 @@ public class CardController {
     private final UserRepository userRepository;
     private final CardRepository cardRepository;
     private final ListRepository listRepository;
+    private final WebSocketBroadcastService webSocketBroadcastService;
 
     @GetMapping("/card/{listId}")
     @Operation(summary = "Get cards by list ID", description = "Retrieve all cards for a specific list")
@@ -76,9 +78,14 @@ public class CardController {
             throw new AccessDeniedException("Only board owner can create cards");
         }
         
+        CardDto createdCard = cardService.createCard(request);
+        
+        // Broadcast WebSocket message
+        webSocketBroadcastService.broadcastCardCreated(boardId, createdCard.getId(), createdCard);
+        
         return ResponseUtil.ok(HttpStatus.CREATED.value(),
                 translateMessage.translate(MessageKeys.CARD_CREATE_SUCCESS),
-                cardService.createCard(request));
+                createdCard);
     }
 
     @PutMapping("/edit/card")
@@ -98,9 +105,14 @@ public class CardController {
             throw new AccessDeniedException("Only board members can update cards");
         }
         
+        CardDto updatedCard = cardService.updateCard(request);
+        
+        // Broadcast WebSocket message
+        webSocketBroadcastService.broadcastCardUpdated(boardId, request.getId(), updatedCard);
+        
         return ResponseUtil.ok(HttpStatus.OK.value(),
                 translateMessage.translate(MessageKeys.CARD_UPDATE_SUCCESS),
-                cardService.updateCard(request));
+                updatedCard);
     }
 
     @PutMapping("/cards/update/category")
@@ -120,9 +132,19 @@ public class CardController {
             throw new AccessDeniedException("Only board members can move cards");
         }
         
+        // Lấy fromListId trước khi update
+        Long fromListId = cardRepository.findById(request.getCardId())
+                .map(card -> card.getList().getId())
+                .orElseThrow(() -> new IllegalArgumentException("Card not found"));
+        
+        CardDto updatedCard = cardService.updateCardCategory(request);
+        
+        // Broadcast WebSocket message
+        webSocketBroadcastService.broadcastCardMoved(boardId, request.getCardId(), fromListId, request.getLaneId(), updatedCard);
+        
         return ResponseUtil.ok(HttpStatus.OK.value(),
                 translateMessage.translate(MessageKeys.CARD_MOVE_SUCCESS),
-                cardService.updateCardCategory(request));
+                updatedCard);
     }
 
     @DeleteMapping("/delete/card")
@@ -141,6 +163,9 @@ public class CardController {
         if (!authzService.canDeleteCard(userId, boardId)) {
             throw new AccessDeniedException("Only board owner can delete cards");
         }
+        
+        // Broadcast WebSocket message trước khi xóa
+        webSocketBroadcastService.broadcastCardDeleted(boardId, id);
         
         cardService.deleteCard(id);
         return ResponseUtil.ok(HttpStatus.OK.value(),

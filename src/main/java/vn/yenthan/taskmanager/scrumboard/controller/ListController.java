@@ -21,6 +21,7 @@ import vn.yenthan.taskmanager.scrumboard.security.AuthzService;
 import vn.yenthan.taskmanager.scrumboard.service.ListService;
 import vn.yenthan.taskmanager.core.component.TranslateMessage;
 import vn.yenthan.taskmanager.util.MessageKeys;
+import vn.yenthan.taskmanager.websocket.service.WebSocketBroadcastService;
 
 import java.security.Principal;
 import java.util.List;
@@ -37,6 +38,7 @@ public class ListController {
     private final AuthzService authzService;
     private final UserRepository userRepository;
     private final ListRepository listRepository;
+    private final WebSocketBroadcastService webSocketBroadcastService;
 
     @GetMapping("/list/{boardId}")
     @Operation(summary = "Get lists by board ID", description = "Retrieve all lists for a specific board")
@@ -68,9 +70,16 @@ public class ListController {
             throw new AccessDeniedException("Only board owner can create lists");
         }
         
+        CardListDto createdList = listService.createList(request);
+        
+        // Broadcast WebSocket message
+        log.info("About to broadcast list created for board: {}, list: {}", request.getBoardId(), createdList.getId());
+        webSocketBroadcastService.broadcastListCreated(request.getBoardId(), createdList.getId(), createdList);
+        log.info("Broadcast completed for list created");
+        
         return ResponseUtil.ok(HttpStatus.CREATED.value(),
                 translateMessage.translate(MessageKeys.LIST_CREATE_SUCCESS),
-                listService.createList(request));
+                createdList);
     }
 
     @PutMapping("/edit/list")
@@ -90,9 +99,14 @@ public class ListController {
             throw new AccessDeniedException("Only board owner can edit lists");
         }
         
+        CardListDto updatedList = listService.updateList(request);
+        
+        // Broadcast WebSocket message
+        webSocketBroadcastService.broadcastListUpdated(boardId, request.getId(), updatedList);
+        
         return ResponseUtil.ok(HttpStatus.OK.value(),
                 translateMessage.translate(MessageKeys.LIST_UPDATE_SUCCESS),
-                listService.updateList(request));
+                updatedList);
     }
 
     @DeleteMapping("/delete/list")
@@ -111,6 +125,9 @@ public class ListController {
         if (!authzService.canDeleteList(userId, boardId)) {
             throw new AccessDeniedException("Only board owner can delete lists");
         }
+        
+        // Broadcast WebSocket message trước khi xóa
+        webSocketBroadcastService.broadcastListDeleted(boardId, id);
         
         listService.deleteList(id);
         return ResponseUtil.ok(HttpStatus.OK.value(),
