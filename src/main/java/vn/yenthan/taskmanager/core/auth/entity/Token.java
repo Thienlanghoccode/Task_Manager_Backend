@@ -32,9 +32,11 @@ public class Token {
     private String deviceId;
 
     @Column(name = "revoked", nullable = false)
+    @Builder.Default
     private boolean revoked = false;
 
     @Column(name = "expired", nullable = false)
+    @Builder.Default
     private boolean expired = false;
 
     @Column(name = "created_at", nullable = false, updatable = false)

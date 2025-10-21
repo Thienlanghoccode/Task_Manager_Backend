@@ -40,6 +40,7 @@ public class SecurityConfig {
             "/swagger-ui.html/**",
             "/swagger-ui/**",
             "/auth/**",
+            "/web/**",  // ✅ Allow web pages
     };
 
     @Bean
@@ -51,7 +52,8 @@ public class SecurityConfig {
                         .anyRequest().permitAll()
                 )
                 .sessionManagement(manager -> manager
-                        .sessionCreationPolicy(STATELESS))
+                        .sessionCreationPolicy(STATELESS)
+                        .sessionFixation().migrateSession())
                 .authenticationProvider(authenticationProvider).addFilterBefore(preFilter, UsernamePasswordAuthenticationFilter.class)
         ;
         return http.build();
