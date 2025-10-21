@@ -46,6 +46,9 @@ public class InvitationServiceImpl implements InvitationService {
 
     @Value("${FRONTEND_BASE_URL:http://localhost:5173}")
     private String frontendBaseUrl;
+    
+    @Value("${BACKEND_BASE_URL:http://localhost:8081}")
+    private String backendBaseUrl;
 
     private static final long INVITE_TTL_HOURS = 48L;
 
@@ -72,26 +75,31 @@ public class InvitationServiceImpl implements InvitationService {
                 return apiError(HttpStatus.CONFLICT.value(), "Already member");
             }
             
-            // Luôn assign MEMBER role cho user được invite
+            // ✅ THAY ĐỔI: Tạo invitation cho cả user đã tồn tại
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("email", request.getEmail());
+            payload.put("boardId", boardId);
+            payload.put("boardName", board.getName());
+            payload.put("invitedById", currentUserId);
+            
+            // Luôn assign MEMBER role cho invitation
             BoardRoleEntity memberRole = boardRoleRepository.findByBoardIdAndIsDefaultTrue(boardId)
                     .orElseThrow(() -> new NotFoundException("Default MEMBER role not found for board " + boardId));
             Long roleId = memberRole.getId();
-            log.info("Assigned MEMBER role {} for invited user {}", roleId, existingUser.getId());
+            log.info("Assigned MEMBER role {} for invitation", roleId);
+            payload.put("roleId", roleId);
+
+            String token = invitationTokenService.generateInvitationToken(payload, Duration.ofHours(INVITE_TTL_HOURS));
+            String acceptLink = "http://localhost:8081/web/invitations/accept?token=" + token;
+            emailService.sendBoardInvite(request.getEmail(), board.getName(), getInviterName(currentUserId), acceptLink, INVITE_TTL_HOURS);
             
-            memberService.addMemberToBoard(boardId, existingUser.getId(), currentUserId, roleId);
-            emailService.sendAddedToBoard(existingUser.getEmail(), board.getName(), getInviterName(currentUserId));
-            notificationService.createNotification(
-                    "BOARD_MEMBER_ADDED",
-                    "Bạn đã được thêm vào board",
-                    "Bạn đã được thêm vào board " + board.getName(),
-                    existingUser.getId(),
-                    boardId,
-                    null,
-                    currentUserId,
-                    null
-            );
+            log.info("Invitation sent to {} for board {} with token expiry {} hours", 
+                    request.getEmail(), boardId, INVITE_TTL_HOURS);
+            
             Map<String, Object> res = new HashMap<>();
-            res.put("message", "User added to board");
+            res.put("message", "Invitation sent");
+            res.put("token", token);
+            res.put("expiresInHours", INVITE_TTL_HOURS);
             return res;
         }
 
@@ -110,7 +118,7 @@ public class InvitationServiceImpl implements InvitationService {
         payload.put("roleId", roleId);
 
         String token = invitationTokenService.generateInvitationToken(payload, Duration.ofHours(INVITE_TTL_HOURS));
-        String acceptLink = frontendBaseUrl + "/invitations/accept?token=" + token;
+        String acceptLink = backendBaseUrl + "/web/invitations/accept?token=" + token;
         emailService.sendBoardInvite(request.getEmail(), board.getName(), getInviterName(currentUserId), acceptLink, INVITE_TTL_HOURS);
         
         log.info("Invitation sent to {} for board {} with token expiry {} hours", 
@@ -124,12 +132,12 @@ public class InvitationServiceImpl implements InvitationService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(rollbackFor = Exception.class)
     public Map<String, Object> accept(String token, Long currentUserId) {
         log.info("Processing invitation acceptance for token: {} by user: {}", token, currentUserId);
         
-        // Check invitation còn valid (chưa expired, chưa used)
-        Optional<Map<String, Object>> payloadOpt = invitationTokenService.consumeInvitationToken(token);
+        // Check invitation còn valid (chưa expired, chưa used) - KHÔNG consume token
+        Optional<Map<String, Object>> payloadOpt = invitationTokenService.getInvitationToken(token);
         if (payloadOpt.isEmpty()) {
             log.warn("Invitation token {} is expired or invalid", token);
             return apiError(410, "Invitation expired or invalid");
@@ -159,6 +167,13 @@ public class InvitationServiceImpl implements InvitationService {
                 return apiError(HttpStatus.CONFLICT.value(), "Already a member of this board");
             }
             
+            // ✅ CHỈ consume token khi user đã đăng nhập và sẵn sàng join board
+            Optional<Map<String, Object>> consumeResult = invitationTokenService.consumeInvitationToken(token);
+            if (consumeResult.isEmpty()) {
+                log.warn("Failed to consume invitation token {} - may have been used", token);
+                return apiError(410, "Invitation token has been used or expired");
+            }
+            
             // Add user vào board với role từ invitation
             memberService.addMemberToBoard(boardId, currentUserId, invitedById, roleId);
             
@@ -172,7 +187,7 @@ public class InvitationServiceImpl implements InvitationService {
             return res;
         }
 
-        // Return invitation details for unauthenticated user
+        // Return invitation details for unauthenticated user - KHÔNG consume token
         Map<String, Object> res = new HashMap<>();
         res.put("email", email);
         res.put("boardId", boardId);

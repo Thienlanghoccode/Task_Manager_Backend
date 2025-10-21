@@ -37,6 +37,24 @@ public class InvitationTokenServiceImpl implements InvitationTokenService {
     }
 
     @Override
+    @SneakyThrows
+    public Optional<Map<String, Object>> getInvitationToken(String token) {
+        try {
+            String key = "invitation:" + token;
+            String json = redisTemplate.opsForValue().get(key);
+            if (json == null) {
+                return Optional.empty();
+            }
+            Map<String, Object> map = objectMapper.readValue(json, new TypeReference<Map<String, Object>>(){});
+            return Optional.of(map);
+        } catch (Exception e) {
+            log.error("Failed to get invitation token: {}", e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    @SneakyThrows
     public Optional<Map<String, Object>> consumeInvitationToken(String token) {
         try {
             String key = "invitation:" + token;

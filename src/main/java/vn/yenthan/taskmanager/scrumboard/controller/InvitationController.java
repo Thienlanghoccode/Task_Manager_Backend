@@ -14,11 +14,14 @@ import vn.yenthan.taskmanager.core.util.ResponseUtil;
 import vn.yenthan.taskmanager.core.entity.SuccessResponse;
 import vn.yenthan.taskmanager.core.auth.repository.UserRepository;
 import vn.yenthan.taskmanager.scrumboard.dto.InviteRequestDto;
+import vn.yenthan.taskmanager.scrumboard.invitation.InvitationTokenService;
 import vn.yenthan.taskmanager.scrumboard.service.InvitationService;
 import vn.yenthan.taskmanager.util.MessageKeys;
 
 import java.security.Principal;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("${api.prefix}/scrumboard")
@@ -30,6 +33,7 @@ public class InvitationController {
     private final InvitationService invitationService;
     private final TranslateMessage translateMessage;
     private final UserRepository userRepository;
+    private final InvitationTokenService invitationTokenService;
 
     @PostMapping("/boards/{boardId}/invite")
     @Operation(summary = "Invite user to board", description = "Invite a user to board via email. User will be assigned MEMBER role automatically.")
@@ -59,6 +63,39 @@ public class InvitationController {
         Map<String, Object> res = invitationService.complete(token, userId);
         int status = (int) res.getOrDefault("status", HttpStatus.OK.value());
         return ResponseUtil.ok(status, translateMessage.translate(MessageKeys.MEMBER_ADD_SUCCESS), res);
+    }
+
+    @PostMapping("/invitations/complete-after-login")
+    @Operation(summary = "Complete invitation after login", description = "Complete invitation after user has logged in. User ID is extracted from authentication context.")
+    public SuccessResponse<Map<String, Object>> completeAfterLogin(
+            @RequestParam("token") String token,
+            Principal principal) {
+        Long currentUserId = extractUserIdFromPrincipal(principal);
+        Map<String, Object> res = invitationService.complete(token, currentUserId);
+        int status = (int) res.getOrDefault("status", HttpStatus.OK.value());
+        return ResponseUtil.ok(status, translateMessage.translate(MessageKeys.MEMBER_ADD_SUCCESS), res);
+    }
+
+    @GetMapping("/invitations/debug/{token}")
+    @Operation(summary = "Debug invitation token", description = "Check if invitation token exists and get its data")
+    public SuccessResponse<Map<String, Object>> debugToken(@PathVariable String token) {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            Optional<Map<String, Object>> payloadOpt = invitationTokenService.getInvitationToken(token);
+            if (payloadOpt.isPresent()) {
+                result.put("exists", true);
+                result.put("data", payloadOpt.get());
+            } else {
+                result.put("exists", false);
+                result.put("message", "Token not found or expired");
+            }
+        } catch (Exception e) {
+            result.put("exists", false);
+            result.put("error", e.getMessage());
+        }
+        
+        return ResponseUtil.ok(HttpStatus.OK.value(), "Debug result", result);
     }
 
 
