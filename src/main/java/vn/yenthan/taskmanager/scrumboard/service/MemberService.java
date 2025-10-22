@@ -15,6 +15,7 @@ import vn.yenthan.taskmanager.scrumboard.repository.BoardRepository;
 import vn.yenthan.taskmanager.scrumboard.repository.BoardRoleRepository;
 import vn.yenthan.taskmanager.core.auth.entity.User;
 import vn.yenthan.taskmanager.core.auth.repository.UserRepository;
+import vn.yenthan.taskmanager.notifications.service.NotificationService;
 
 import java.util.List;
 
@@ -29,6 +30,7 @@ public class MemberService {
     private final BoardRoleRepository boardRoleRepository;
     private final UserRepository userRepository;
     private final ScrumboardMapper scrumboardMapper;
+    private final NotificationService notificationService;
 
     @Transactional(readOnly = true)
     public List<MemberDto> getBoardMembers(Long boardId) {
@@ -84,6 +86,24 @@ public class MemberService {
 
         member.setJoinedAt(java.time.Instant.now());
         boardMemberRepository.save(member);
+        
+        // Lưu notification khi add member vào board
+        try {
+            String inviterName = invitedBy != null ? invitedBy.getFullName() : "Someone";
+            
+            notificationService.createNotification(
+                "MEMBER_ADDED",
+                "Bạn đã được thêm vào board",
+                String.format("Bạn đã được %s thêm vào board '%s'", inviterName, board.getName()),
+                user.getId(),
+                boardId,
+                null, // No specific card
+                invitedBy != null ? invitedBy.getId() : user.getId(),
+                String.format("{\"boardName\":\"%s\",\"inviterName\":\"%s\"}", board.getName(), inviterName)
+            );
+        } catch (Exception e) {
+            log.error("Error creating notification for member added: {}", e.getMessage());
+        }
     }
 
     public void removeMemberFromBoard(Long boardId, Long userId) {

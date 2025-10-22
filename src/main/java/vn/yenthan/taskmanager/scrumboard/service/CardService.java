@@ -14,6 +14,7 @@ import vn.yenthan.taskmanager.scrumboard.mapper.ScrumboardMapper;
 import vn.yenthan.taskmanager.scrumboard.repository.*;
 import vn.yenthan.taskmanager.core.auth.repository.UserRepository;
 import vn.yenthan.taskmanager.core.auth.entity.User;
+import vn.yenthan.taskmanager.notifications.service.NotificationService;
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -33,6 +34,8 @@ public class CardService {
     private final CardMemberRepository cardMemberRepository;
     private final CardLabelRepository cardLabelRepository;
     private final ScrumboardMapper scrumboardMapper;
+    private final NotificationService notificationService;
+    private final BoardMemberRepository boardMemberRepository;
 
     @Transactional(readOnly = true)
     public List<CardDto> getCardsByListId(Long listId) {
@@ -143,11 +146,35 @@ public class CardService {
         CardEntity card = cardRepository.findById(request.getCardId())
                 .orElseThrow(() -> new NotFoundException("Card not found with id: " + request.getCardId()));
         
+        ListEntity oldList = card.getList();
         ListEntity newList = listRepository.findById(request.getLaneId())
                 .orElseThrow(() -> new NotFoundException("List not found with id: " + request.getLaneId()));
         
         card.setList(newList);
         CardEntity updatedCard = cardRepository.save(card);
+        
+        // Lưu notification khi move card (gửi cho tất cả member của board)
+        try {
+            // Lấy danh sách member của board
+            List<User> boardMembers = getBoardMembers(card.getList().getBoard().getId());
+            
+            for (User member : boardMembers) {
+                notificationService.createNotification(
+                    "CARD_MOVED",
+                    "Card đã được di chuyển",
+                    String.format("Card '%s' đã được di chuyển từ '%s' sang '%s'", 
+                                card.getTitle(), oldList.getName(), newList.getName()),
+                    member.getId(),
+                    card.getList().getBoard().getId(),
+                    card.getId(),
+                    member.getId(), // TODO: Track who moved
+                    String.format("{\"cardTitle\":\"%s\",\"oldList\":\"%s\",\"newList\":\"%s\"}", 
+                                card.getTitle(), oldList.getName(), newList.getName())
+                );
+            }
+        } catch (Exception e) {
+            log.error("Error creating notification for card move: {}", e.getMessage());
+        }
         
         return scrumboardMapper.toCardDto(updatedCard);
     }
@@ -162,18 +189,35 @@ public class CardService {
     }
 
     private void addMembersToCard(Long cardId, List<Long> memberIds) {
+        CardEntity card = cardRepository.findById(cardId)
+                .orElseThrow(() -> new NotFoundException("Card not found with id: " + cardId));
+        
         for (Long memberId : memberIds) {
             if (!cardMemberRepository.existsByCardIdAndUserId(cardId, memberId)) {
                 User user = userRepository.findById(memberId)
                         .orElseThrow(() -> new NotFoundException("User not found with id: " + memberId));
                 
-                CardEntity card = cardRepository.findById(cardId)
-                        .orElseThrow(() -> new NotFoundException("Card not found with id: " + cardId));
-                
                 CardMemberEntity cardMember = new CardMemberEntity();
                 cardMember.setCard(card);
                 cardMember.setUser(user);
                 cardMemberRepository.save(cardMember);
+                
+                // Lưu notification khi assign member vào card
+                try {
+                    notificationService.createNotification(
+                        "CARD_ASSIGNED",
+                        "Bạn đã được assign vào card",
+                        String.format("Bạn đã được assign vào card '%s'", card.getTitle()),
+                        user.getId(),
+                        card.getList().getBoard().getId(),
+                        cardId,
+                        user.getId(), // TODO: Track who assigned
+                        String.format("{\"cardTitle\":\"%s\",\"listName\":\"%s\"}", 
+                                    card.getTitle(), card.getList().getName())
+                    );
+                } catch (Exception e) {
+                    log.error("Error creating notification for card assignment: {}", e.getMessage());
+                }
             }
         }
     }
@@ -213,5 +257,12 @@ public class CardService {
         if (!labelIds.isEmpty()) {
             addLabelsToCard(cardId, labelIds);
         }
+    }
+    
+    private List<User> getBoardMembers(Long boardId) {
+        List<BoardMemberEntity> boardMembers = boardMemberRepository.findActiveByBoardId(boardId);
+        return boardMembers.stream()
+                .map(BoardMemberEntity::getUser)
+                .toList();
     }
 }

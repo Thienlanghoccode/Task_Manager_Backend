@@ -7,6 +7,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import vn.yenthan.taskmanager.core.exception.payload.NotFoundException;
 import vn.yenthan.taskmanager.notifications.dto.response.NotificationDto;
 import vn.yenthan.taskmanager.notifications.entity.NotificationEntity;
@@ -17,6 +18,7 @@ import vn.yenthan.taskmanager.scrumboard.entity.CardEntity;
 import vn.yenthan.taskmanager.core.auth.entity.User;
 import vn.yenthan.taskmanager.scrumboard.repository.BoardRepository;
 import vn.yenthan.taskmanager.scrumboard.repository.CardRepository;
+
 import vn.yenthan.taskmanager.core.auth.repository.UserRepository;
 
 import java.util.List;
@@ -32,12 +34,21 @@ public class NotificationService {
     private final BoardRepository boardRepository;
     private final CardRepository cardRepository;
     private final NotificationMapper notificationMapper;
+    private final SimpleWebPushService webPushService;
 
     @Transactional(readOnly = true)
     public Page<NotificationDto> getNotificationsByUserId(Long userId, int page, int size) {
         log.info("Fetching notifications for user {} with pagination: page={}, size={}", userId, page, size);
         Pageable pageable = PageRequest.of(page, size);
         Page<NotificationEntity> notifications = notificationRepository.findByUserIdWithActor(userId, pageable);
+        return notifications.map(notificationMapper::toNotificationDto);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<NotificationDto> getAllNotifications(int page, int size) {
+        log.info("Fetching all notifications with pagination: page={}, size={}", page, size);
+        Pageable pageable = PageRequest.of(page, size);
+        Page<NotificationEntity> notifications = notificationRepository.findAllWithActor(pageable);
         return notifications.map(notificationMapper::toNotificationDto);
     }
 
@@ -114,6 +125,18 @@ public class NotificationService {
         
         notificationRepository.save(notification);
         log.info("Notification created successfully with id: {}", notification.getId());
+        
+        // Send push notification - TODO: Implement when SimpleWebPushService has sendPushNotification method
+        // try {
+        //     String url = cardId != null ? "/board/" + boardId + "/card/" + cardId : 
+        //                 boardId != null ? "/board/" + boardId : "/dashboard";
+        //     
+        //     webPushService.sendPushNotification(userId, title, message, url);
+        //     log.info("Push notification sent for notification id: {}", notification.getId());
+        // } catch (Exception e) {
+        //     log.error("Failed to send push notification for notification id {}: {}", 
+        //             notification.getId(), e.getMessage());
+        // }
     }
 
     public void deleteNotification(Long notificationId) {

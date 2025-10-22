@@ -72,8 +72,13 @@ logging:
     com.zaxxer.hikari: ERROR
 
     # Event processing - enable detailed logging
-    com.vn.yenthan.shopapp_backend.event: INFO
-    org.springframework.kafka: INFO
+
+# Web Push Configuration
+webpush:
+  vapid:
+    public-key: ${VAPID_PUBLIC_KEY:BFG7k2HpM5dHTwC2Noi-EMKSR1MUpUdQa2SrqufF1CFVoP6NlGw-V3Zgf6A90yCYBsHwSFMukGuO9tVHZWSWWhI}
+    private-key: ${VAPID_PRIVATE_KEY:sr6h7NtAUmladak2iqc38u8ylRyI8d38Vb6d0LiJfIQ}
+    subject: ${VAPID_SUBJECT:mailto:admin@taskmanager.com}
 
 api:
   prefix: ${API_PREFIX:/api/v1}
@@ -81,7 +86,7 @@ domain:
   protocol: ${DOMAIN_PROTOCOL:http://localhost:8081}
 
 jwt:
-  expiration: ${JWT_EXPIRATION:1800000} # 30 minutes = 1000 * 60 * 30
+  expiration: ${JWT_EXPIRATION:1209600000} # 30 minutes = 1000 * 60 * 30
   expiration-refresh-token: ${JWT_EXPIRATION_REFRESH_TOKEN:1209600000} #  2 weeks
   secretKey: ${JWT_SECRET_KEY}
   refreshKey: ${JWT_REFRESH_KEY}

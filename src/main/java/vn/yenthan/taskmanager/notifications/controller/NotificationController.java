@@ -20,7 +20,7 @@ import vn.yenthan.taskmanager.util.MessageKeys;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/notifications")
+@RequestMapping("${api.prefix}/notifications")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Notification Controller", description = "API endpoints for notification management")
@@ -30,12 +30,24 @@ public class NotificationController {
     private final TranslateMessage translateMessage;
 
     @GetMapping
-    @Operation(summary = "Get notifications by user ID", description = "Retrieve paginated notifications for a user")
-    public PageResponse<NotificationDto> getNotificationsByUserId(
-            @Parameter(description = "User ID") @RequestParam Long userId,
+    @Operation(summary = "Get all notifications", description = "Retrieve paginated notifications for all users")
+    public PageResponse<NotificationDto> getAllNotifications(
             @Parameter(description = "Page number (0-based)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "Page size") @RequestParam(defaultValue = "10") int size) {
-        log.info("GET /api/notifications?userId={}&page={}&size={} - Fetching notifications for user", 
+        log.info("GET /api/notifications?page={}&size={} - Fetching all notifications", 
+                page, size);
+        Page<NotificationDto> notifications = notificationService.getAllNotifications(page, size);
+        return ResponseUtil.ok(HttpStatus.OK.value(),
+                notifications);
+    }
+
+    @GetMapping("/user/{userId}")
+    @Operation(summary = "Get notifications by user ID", description = "Retrieve paginated notifications for a specific user")
+    public PageResponse<NotificationDto> getNotificationsByUserId(
+            @Parameter(description = "User ID") @PathVariable Long userId,
+            @Parameter(description = "Page number (0-based)") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Page size") @RequestParam(defaultValue = "10") int size) {
+        log.info("GET /api/notifications/user/{}?page={}&size={} - Fetching notifications for user", 
                 userId, page, size);
         Page<NotificationDto> notifications = notificationService.getNotificationsByUserId(userId, page, size);
         return ResponseUtil.ok(HttpStatus.OK.value(),

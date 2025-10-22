@@ -18,6 +18,10 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
     Page<NotificationEntity> findByUserIdWithActor(@Param("userId") Long userId, Pageable pageable);
 
     @Query("SELECT n FROM NotificationEntity n LEFT JOIN FETCH n.actor a " +
+           "ORDER BY n.createdAt DESC")
+    Page<NotificationEntity> findAllWithActor(Pageable pageable);
+
+    @Query("SELECT n FROM NotificationEntity n LEFT JOIN FETCH n.actor a " +
            "WHERE n.user.id = :userId AND n.isRead = false ORDER BY n.createdAt DESC")
     List<NotificationEntity> findUnreadByUserId(@Param("userId") Long userId);
 
